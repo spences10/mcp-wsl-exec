@@ -8,10 +8,12 @@ import {
 	ListToolsRequestSchema,
 	McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { spawn } from 'child_process';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { CommandExecutor } from './command-executor.js';
+import { InvalidConfirmationError } from './errors.js';
+import { CommandResponse, PendingConfirmation } from './types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,40 +22,10 @@ const pkg = JSON.parse(
 );
 const { name, version } = pkg;
 
-// Define dangerous commands that require confirmation
-const dangerous_commands = [
-	'rm',
-	'rmdir',
-	'dd',
-	'mkfs',
-	'mkswap',
-	'fdisk',
-	'shutdown',
-	'reboot',
-	'>', // redirect that could overwrite
-	'format',
-	'chmod',
-	'chown',
-];
-
-interface command_response {
-	stdout: string;
-	stderr: string;
-	exit_code: number | null;
-	command: string;
-	requires_confirmation?: boolean;
-}
-
-class wsl_server {
+class WslServer {
 	private server: Server;
-	private pending_confirmations: Map<
-		string,
-		{
-			command: string;
-			resolve: (value: command_response) => void;
-			reject: (reason?: any) => void;
-		}
-	>;
+	private command_executor: CommandExecutor;
+	private pending_confirmations: Map<string, PendingConfirmation>;
 
 	constructor() {
 		this.server = new Server(
@@ -64,32 +36,38 @@ class wsl_server {
 				},
 			},
 		);
+		this.command_executor = new CommandExecutor();
 		this.pending_confirmations = new Map();
 		this.setup_tool_handlers();
 	}
 
-	private is_dangerous_command(command: string): boolean {
-		return dangerous_commands.some(
-			(dangerous) =>
-				command.toLowerCase().includes(dangerous.toLowerCase()) ||
-				command.match(new RegExp(`\\b${dangerous}\\b`, 'i')),
-		);
-	}
-
-	private sanitize_command(command: string): string {
-		// Basic command sanitization
-		return command.replace(/[;&|`$]/g, '');
+	private format_output(result: CommandResponse): string {
+		return [
+			`Command: ${result.command}`,
+			result.working_dir
+				? `Working Directory: ${result.working_dir}`
+				: null,
+			`Exit Code: ${result.exit_code}`,
+			result.stdout.trim()
+				? `Output:\n${result.stdout.trim()}`
+				: 'No output',
+			result.stderr.trim()
+				? `Errors:\n${result.stderr.trim()}`
+				: 'No errors',
+			result.error ? `Error: ${result.error}` : null,
+		]
+			.filter(Boolean)
+			.join('\n');
 	}
 
 	private async execute_wsl_command(
 		command: string,
 		working_dir?: string,
 		timeout?: number,
-	): Promise<command_response> {
+	): Promise<CommandResponse> {
 		return new Promise((resolve, reject) => {
-			const sanitized_command = this.sanitize_command(command);
 			const requires_confirmation =
-				this.is_dangerous_command(sanitized_command);
+				this.command_executor.is_dangerous_command(command);
 
 			if (requires_confirmation) {
 				// Generate a unique confirmation ID
@@ -97,7 +75,9 @@ class wsl_server {
 					.toString(36)
 					.substring(7);
 				this.pending_confirmations.set(confirmation_id, {
-					command: sanitized_command,
+					command,
+					working_dir,
+					timeout,
 					resolve,
 					reject,
 				});
@@ -105,61 +85,18 @@ class wsl_server {
 				// Return early with confirmation request
 				resolve({
 					stdout: '',
-					stderr: `Command "${sanitized_command}" requires confirmation. Use confirm_command with ID: ${confirmation_id}`,
+					stderr: `Command "${command}" requires confirmation. Use confirm_command with ID: ${confirmation_id}`,
 					exit_code: null,
-					command: sanitized_command,
+					command,
 					requires_confirmation: true,
 				});
 				return;
 			}
 
-			const cd_command = working_dir ? `cd "${working_dir}" && ` : '';
-			const full_command = `${cd_command}${sanitized_command}`;
-
-			const wsl_process = spawn('wsl.exe', [
-				'--exec',
-				'bash',
-				'-c',
-				full_command,
-			]);
-
-			let stdout = '';
-			let stderr = '';
-
-			wsl_process.stdout.on('data', (data) => {
-				stdout += data.toString();
-			});
-
-			wsl_process.stderr.on('data', (data) => {
-				stderr += data.toString();
-			});
-
-			let timeout_id: NodeJS.Timeout | undefined;
-			if (timeout) {
-				timeout_id = setTimeout(() => {
-					wsl_process.kill();
-					reject(new Error(`Command timed out after ${timeout}ms`));
-				}, timeout);
-			}
-
-			wsl_process.on('close', (code) => {
-				if (timeout_id) {
-					clearTimeout(timeout_id);
-				}
-				resolve({
-					stdout,
-					stderr,
-					exit_code: code,
-					command: sanitized_command,
-				});
-			});
-
-			wsl_process.on('error', (error) => {
-				if (timeout_id) {
-					clearTimeout(timeout_id);
-				}
-				reject(error);
-			});
+			this.command_executor
+				.execute_command(command, working_dir, timeout)
+				.then(resolve)
+				.catch(reject);
 		});
 	}
 
@@ -249,7 +186,7 @@ class wsl_server {
 								content: [
 									{
 										type: 'text',
-										text: `Command: ${result.command}\nExit Code: ${result.exit_code}\nOutput:\n${result.stdout}\nErrors:\n${result.stderr}`,
+										text: this.format_output(result),
 									},
 								],
 							};
@@ -265,10 +202,7 @@ class wsl_server {
 							const pending =
 								this.pending_confirmations.get(confirmation_id);
 							if (!pending) {
-								throw new McpError(
-									ErrorCode.InvalidRequest,
-									'Invalid or expired confirmation ID',
-								);
+								throw new InvalidConfirmationError(confirmation_id);
 							}
 
 							this.pending_confirmations.delete(confirmation_id);
@@ -284,14 +218,17 @@ class wsl_server {
 								};
 							}
 
-							const result = await this.execute_wsl_command(
+							const result = await this.command_executor.execute_command(
 								pending.command,
+								pending.working_dir,
+								pending.timeout,
 							);
+
 							return {
 								content: [
 									{
 										type: 'text',
-										text: `Command: ${result.command}\nExit Code: ${result.exit_code}\nOutput:\n${result.stdout}\nErrors:\n${result.stderr}`,
+										text: this.format_output(result),
 									},
 								],
 							};
@@ -329,5 +266,5 @@ class wsl_server {
 	}
 }
 
-const server = new wsl_server();
+const server = new WslServer();
 server.run().catch(console.error);
