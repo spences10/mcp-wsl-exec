@@ -1,6 +1,6 @@
 {
 	"name": "mcp-wsl-exec",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"description": "A secure Model Context Protocol (MCP) server for executing commands in Windows Subsystem for Linux (WSL) with built-in safety features and validation",
 	"type": "module",
 	"main": "dist/index.js",
