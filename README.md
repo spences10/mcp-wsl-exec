@@ -4,6 +4,10 @@ A Model Context Protocol (MCP) server for executing commands in
 Windows Subsystem for Linux (WSL) environments. This server provides
 secure command execution with built-in safety features and validation.
 
+<a href="https://glama.ai/mcp/servers/wv6df94kb8">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/wv6df94kb8/badge" />
+</a>
+
 ## Features
 
 - 🔒 Secure command execution in WSL environments
