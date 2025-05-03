@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/spences10-mcp-wsl-exec-badge.png)](https://mseep.ai/app/spences10-mcp-wsl-exec)
+
 # mcp-wsl-exec
 
 A Model Context Protocol (MCP) server for executing commands in
