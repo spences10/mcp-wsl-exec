@@ -52,7 +52,7 @@
 	},
 	"homepage": "https://github.com/spences10/mcp-wsl-exec#readme",
 	"dependencies": {
-		"@modelcontextprotocol/sdk": "1.11.5"
+		"@modelcontextprotocol/sdk": "1.12.1"
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.29.4",
