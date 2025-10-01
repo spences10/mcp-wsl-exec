@@ -2,4 +2,4 @@
 'mcp-wsl-exec': patch
 ---
 
-move from anthropic sdk to tmcp
+Migrate to tmcp, add read-only info tools, clarify Windows+Claude Desktop focus

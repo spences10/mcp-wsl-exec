@@ -1,15 +1,33 @@
 # mcp-wsl-exec
 
-A Model Context Protocol (MCP) server for executing commands in
-Windows Subsystem for Linux (WSL) environments. This server provides
-secure command execution with built-in safety features and validation.
+A Model Context Protocol (MCP) server for **Windows + Claude Desktop users** to interact with Windows Subsystem for Linux (WSL). Provides both read-only information gathering and secure command execution capabilities.
 
 <a href="https://glama.ai/mcp/servers/wv6df94kb8">
   <img width="380" height="200" src="https://glama.ai/mcp/servers/wv6df94kb8/badge" />
 </a>
 
+## ⚠️ Important: Who Should Use This?
+
+**✅ You SHOULD use this if:**
+- You're using **Claude Desktop on Windows**
+- You need to interact with your WSL environment
+- You want to provide WSL context to Claude (system info, processes, files, etc.)
+
+**❌ You DON'T need this if:**
+- You're using **Claude Code** (it has native bash access)
+- You're on Linux/macOS (use native tools instead)
+- You only need Windows PowerShell/CMD (use a different MCP server)
+
 ## Features
 
+### 📊 Information Gathering (Read-Only)
+- 🖥️ Get system information (OS, kernel, hostname)
+- 📁 Browse directory contents
+- 💾 Check disk usage
+- ⚙️ List environment variables
+- 🔄 Monitor running processes
+
+### 🔧 Command Execution (With Safety)
 - 🔒 Secure command execution in WSL environments
 - ⚡ Built-in safety features:
   - Dangerous command detection
@@ -18,8 +36,6 @@ secure command execution with built-in safety features and validation.
   - Command sanitization
 - 📁 Working directory support
 - ⏱️ Command timeout functionality
-- 🔍 Detailed command output formatting
-- ❌ Error handling and validation
 - 🛡️ Protection against shell injection
 
 ## Configuration
@@ -59,30 +75,69 @@ Add this to your Claude Desktop configuration:
 
 ## API
 
-The server implements two MCP tools:
+The server provides 7 MCP tools:
 
-### execute_command
+### Information Gathering (Read-Only) 📊
+
+These tools provide context about your WSL environment without making changes:
+
+#### get_system_info
+
+Get system information (OS version, kernel, hostname).
+
+**Parameters:** None
+
+#### get_directory_info
+
+Get directory contents and file information.
+
+**Parameters:**
+- `path` (string, optional): Directory path (defaults to current directory)
+- `details` (boolean, optional): Show detailed information (permissions, sizes, etc.)
+
+#### get_disk_usage
+
+Get disk space information.
+
+**Parameters:**
+- `path` (string, optional): Specific path to check (defaults to all filesystems)
+
+#### get_environment
+
+Get environment variables.
+
+**Parameters:**
+- `filter` (string, optional): Filter pattern to search for specific variables
+
+#### list_processes
+
+List running processes.
+
+**Parameters:**
+- `filter` (string, optional): Filter by process name
+
+### Command Execution (Potentially Destructive) 🔧
+
+Use these tools when you need to make changes or run custom commands:
+
+#### execute_command
 
 Execute a command in WSL with safety checks and validation.
 
-Parameters:
-
+**Parameters:**
 - `command` (string, required): Command to execute
-- `working_dir` (string, optional): Working directory for command
-  execution
+- `working_dir` (string, optional): Working directory for command execution
 - `timeout` (number, optional): Timeout in milliseconds
 
-### confirm_command
+**Note:** Dangerous commands will require confirmation via `confirm_command`.
 
-Confirm execution of a dangerous command that was flagged by safety
-checks.
+#### confirm_command
 
-Parameters:
+Confirm execution of a dangerous command that was flagged by safety checks.
 
-- `confirmation_id` (string, required): Confirmation ID received from
-  execute_command
-- `confirm` (boolean, required): Whether to proceed with the command
-  execution
+**Parameters:**
+- `confirmation_id` (string, required): Confirmation ID received from execute_command
+- `confirm` (boolean, required): Whether to proceed with the command execution
 
 ## Safety Features
 
