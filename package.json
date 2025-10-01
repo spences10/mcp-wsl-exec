@@ -51,12 +51,15 @@
 		"url": "https://github.com/spences10/mcp-wsl-exec/issues"
 	},
 	"homepage": "https://github.com/spences10/mcp-wsl-exec#readme",
-	"dependencies": {
-		"@modelcontextprotocol/sdk": "1.18.2"
-	},
 	"devDependencies": {
 		"@changesets/cli": "^2.29.7",
 		"@types/node": "^24.6.1",
 		"typescript": "^5.9.3"
+	},
+	"dependencies": {
+		"@tmcp/adapter-valibot": "^0.1.4",
+		"@tmcp/transport-stdio": "^0.3.1",
+		"tmcp": "^1.14.0",
+		"valibot": "^1.1.0"
 	}
 }
