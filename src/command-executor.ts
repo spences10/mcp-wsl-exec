@@ -1,7 +1,10 @@
-import { spawn } from 'child_process';
+import { spawn } from 'node:child_process';
 import { dangerous_commands, wsl_config } from './constants.js';
-import { CommandValidationError, CommandTimeoutError } from './errors.js';
-import { CommandResponse } from './types.js';
+import {
+	CommandTimeoutError,
+	CommandValidationError,
+} from './errors.js';
+import type { CommandResponse } from './types.js';
 
 export class CommandExecutor {
 	private sanitize_command(command: string): string {
@@ -23,7 +26,9 @@ export class CommandExecutor {
 		return sanitized;
 	}
 
-	private validate_working_dir(working_dir?: string): string | undefined {
+	private validate_working_dir(
+		working_dir?: string,
+	): string | undefined {
 		if (!working_dir) return undefined;
 
 		// Sanitize and validate working directory
@@ -67,7 +72,9 @@ export class CommandExecutor {
 			const validated_dir = this.validate_working_dir(working_dir);
 			const validated_timeout = this.validate_timeout(timeout);
 
-			const cd_command = validated_dir ? `cd "${validated_dir}" && ` : '';
+			const cd_command = validated_dir
+				? `cd "${validated_dir}" && `
+				: '';
 			const full_command = `${cd_command}${sanitized_command}`;
 
 			const wsl_process = spawn(wsl_config.executable, [
@@ -80,11 +87,11 @@ export class CommandExecutor {
 			let stdout = '';
 			let stderr = '';
 
-			wsl_process.stdout.on('data', (data) => {
+			wsl_process.stdout.on('data', (data: Buffer) => {
 				stdout += data.toString();
 			});
 
-			wsl_process.stderr.on('data', (data) => {
+			wsl_process.stderr.on('data', (data: Buffer) => {
 				stderr += data.toString();
 			});
 
@@ -96,7 +103,7 @@ export class CommandExecutor {
 				}, validated_timeout);
 			}
 
-			wsl_process.on('close', (code) => {
+			wsl_process.on('close', (code: number | null) => {
 				if (timeout_id) {
 					clearTimeout(timeout_id);
 				}
@@ -109,7 +116,7 @@ export class CommandExecutor {
 				});
 			});
 
-			wsl_process.on('error', (error) => {
+			wsl_process.on('error', (error: Error) => {
 				if (timeout_id) {
 					clearTimeout(timeout_id);
 				}

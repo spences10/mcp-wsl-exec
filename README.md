@@ -1,6 +1,9 @@
 # mcp-wsl-exec
 
-A Model Context Protocol (MCP) server for **Windows + Claude Desktop users** to interact with Windows Subsystem for Linux (WSL). Provides both read-only information gathering and secure command execution capabilities.
+A Model Context Protocol (MCP) server for **Windows + Claude Desktop
+users** to interact with Windows Subsystem for Linux (WSL). Provides
+both read-only information gathering and secure command execution
+capabilities.
 
 <a href="https://glama.ai/mcp/servers/wv6df94kb8">
   <img width="380" height="200" src="https://glama.ai/mcp/servers/wv6df94kb8/badge" />
@@ -9,11 +12,14 @@ A Model Context Protocol (MCP) server for **Windows + Claude Desktop users** to 
 ## ⚠️ Important: Who Should Use This?
 
 **✅ You SHOULD use this if:**
+
 - You're using **Claude Desktop on Windows**
 - You need to interact with your WSL environment
-- You want to provide WSL context to Claude (system info, processes, files, etc.)
+- You want to provide WSL context to Claude (system info, processes,
+  files, etc.)
 
 **❌ You DON'T need this if:**
+
 - You're using **Claude Code** (it has native bash access)
 - You're on Linux/macOS (use native tools instead)
 - You only need Windows PowerShell/CMD (use a different MCP server)
@@ -21,6 +27,7 @@ A Model Context Protocol (MCP) server for **Windows + Claude Desktop users** to 
 ## Features
 
 ### 📊 Information Gathering (Read-Only)
+
 - 🖥️ Get system information (OS, kernel, hostname)
 - 📁 Browse directory contents
 - 💾 Check disk usage
@@ -28,6 +35,7 @@ A Model Context Protocol (MCP) server for **Windows + Claude Desktop users** to 
 - 🔄 Monitor running processes
 
 ### 🔧 Command Execution (With Safety)
+
 - 🔒 Secure command execution in WSL environments
 - ⚡ Built-in safety features:
   - Dangerous command detection
@@ -79,7 +87,8 @@ The server provides 7 MCP tools:
 
 ### Information Gathering (Read-Only) 📊
 
-These tools provide context about your WSL environment without making changes:
+These tools provide context about your WSL environment without making
+changes:
 
 #### get_system_info
 
@@ -92,28 +101,36 @@ Get system information (OS version, kernel, hostname).
 Get directory contents and file information.
 
 **Parameters:**
-- `path` (string, optional): Directory path (defaults to current directory)
-- `details` (boolean, optional): Show detailed information (permissions, sizes, etc.)
+
+- `path` (string, optional): Directory path (defaults to current
+  directory)
+- `details` (boolean, optional): Show detailed information
+  (permissions, sizes, etc.)
 
 #### get_disk_usage
 
 Get disk space information.
 
 **Parameters:**
-- `path` (string, optional): Specific path to check (defaults to all filesystems)
+
+- `path` (string, optional): Specific path to check (defaults to all
+  filesystems)
 
 #### get_environment
 
 Get environment variables.
 
 **Parameters:**
-- `filter` (string, optional): Filter pattern to search for specific variables
+
+- `filter` (string, optional): Filter pattern to search for specific
+  variables
 
 #### list_processes
 
 List running processes.
 
 **Parameters:**
+
 - `filter` (string, optional): Filter by process name
 
 ### Command Execution (Potentially Destructive) 🔧
@@ -125,19 +142,26 @@ Use these tools when you need to make changes or run custom commands:
 Execute a command in WSL with safety checks and validation.
 
 **Parameters:**
+
 - `command` (string, required): Command to execute
-- `working_dir` (string, optional): Working directory for command execution
+- `working_dir` (string, optional): Working directory for command
+  execution
 - `timeout` (number, optional): Timeout in milliseconds
 
-**Note:** Dangerous commands will require confirmation via `confirm_command`.
+**Note:** Dangerous commands will require confirmation via
+`confirm_command`.
 
 #### confirm_command
 
-Confirm execution of a dangerous command that was flagged by safety checks.
+Confirm execution of a dangerous command that was flagged by safety
+checks.
 
 **Parameters:**
-- `confirmation_id` (string, required): Confirmation ID received from execute_command
-- `confirm` (boolean, required): Whether to proceed with the command execution
+
+- `confirmation_id` (string, required): Confirmation ID received from
+  execute_command
+- `confirm` (boolean, required): Whether to proceed with the command
+  execution
 
 ## Safety Features
 
