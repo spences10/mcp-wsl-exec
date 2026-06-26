@@ -6,24 +6,29 @@ import {
 } from './errors.js';
 import type { CommandResponse } from './types.js';
 
-export class CommandExecutor {
-	private sanitize_command(command: string): string {
-		// Enhanced command sanitization
-		const sanitized = command
-			.replace(/[;&|`$]/g, '') // Remove shell metacharacters
-			.replace(/\\/g, '/') // Normalize path separators
-			.replace(/\.\./g, '') // Remove parent directory references
-			.replace(/~/g, '') // Remove home directory references
-			.trim(); // Remove leading/trailing whitespace
+export function quote_shell_arg(value: string): string {
+	return `'${value.replace(/'/g, `'\\''`)}'`;
+}
 
-		// Check for empty command after sanitization
-		if (!sanitized) {
+function escape_regexp(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export class CommandExecutor {
+	private validate_command(command: string): string {
+		const validated = command.trim();
+
+		if (!validated) {
+			throw new CommandValidationError('Invalid command: empty');
+		}
+
+		if (validated.includes('\0')) {
 			throw new CommandValidationError(
-				'Invalid command: Empty after sanitization',
+				'Invalid command: contains null byte',
 			);
 		}
 
-		return sanitized;
+		return validated;
 	}
 
 	private validate_working_dir(
@@ -31,17 +36,19 @@ export class CommandExecutor {
 	): string | undefined {
 		if (!working_dir) return undefined;
 
-		// Sanitize and validate working directory
-		const sanitized = working_dir
-			.replace(/[;&|`$]/g, '')
-			.replace(/\\/g, '/')
-			.trim();
+		const validated = working_dir.replace(/\\/g, '/').trim();
 
-		if (!sanitized) {
+		if (!validated) {
 			throw new CommandValidationError('Invalid working directory');
 		}
 
-		return sanitized;
+		if (validated.includes('\0')) {
+			throw new CommandValidationError(
+				'Invalid working directory: contains null byte',
+			);
+		}
+
+		return validated;
 	}
 
 	private validate_timeout(timeout?: number): number | undefined {
@@ -55,11 +62,18 @@ export class CommandExecutor {
 	}
 
 	public is_dangerous_command(command: string): boolean {
-		return dangerous_commands.some(
-			(dangerous) =>
-				command.toLowerCase().includes(dangerous.toLowerCase()) ||
-				command.match(new RegExp(`\\b${dangerous}\\b`, 'i')),
-		);
+		return dangerous_commands.some((dangerous) => {
+			const term = dangerous.toLowerCase();
+
+			if (term.includes(' ') || /[^\w-]/.test(term)) {
+				return command.toLowerCase().includes(term);
+			}
+
+			return new RegExp(
+				`(^|[\\s;&|()])${escape_regexp(term)}(?=$|[\\s;&|()])`,
+				'i',
+			).test(command);
+		});
 	}
 
 	public async execute_command(
@@ -68,14 +82,14 @@ export class CommandExecutor {
 		timeout?: number,
 	): Promise<CommandResponse> {
 		return new Promise((resolve, reject) => {
-			const sanitized_command = this.sanitize_command(command);
+			const validated_command = this.validate_command(command);
 			const validated_dir = this.validate_working_dir(working_dir);
 			const validated_timeout = this.validate_timeout(timeout);
 
 			const cd_command = validated_dir
-				? `cd "${validated_dir}" && `
+				? `cd -- ${quote_shell_arg(validated_dir)} && `
 				: '';
-			const full_command = `${cd_command}${sanitized_command}`;
+			const full_command = `${cd_command}${validated_command}`;
 
 			const wsl_process = spawn(wsl_config.executable, [
 				'--exec',
@@ -111,7 +125,7 @@ export class CommandExecutor {
 					stdout,
 					stderr,
 					exit_code: code,
-					command: sanitized_command,
+					command: validated_command,
 					working_dir: validated_dir,
 				});
 			});

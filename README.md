@@ -177,14 +177,13 @@ require explicit confirmation before execution, including:
 - Permission changes (chmod, chown)
 - And more...
 
-### Command Sanitization
+### Command Validation
 
-All commands are sanitized to prevent:
-
-- Shell metacharacter injection
-- Path traversal attempts
-- Home directory references
-- Dangerous command chaining
+Commands are executed through `bash -c`, so normal shell syntax such
+as pipes, quotes, redirects, and command chaining is preserved. The
+server validates empty/null-byte inputs, quotes arguments used by
+built-in tools, and requires confirmation for potentially dangerous
+commands.
 
 ## Development
 

@@ -1,7 +1,10 @@
 import type { McpServer } from 'tmcp';
 import type { GenericSchema } from 'valibot';
 import * as v from 'valibot';
-import { CommandExecutor } from '../../command-executor.js';
+import {
+	CommandExecutor,
+	quote_shell_arg,
+} from '../../command-executor.js';
 import { InvalidConfirmationError } from '../../errors.js';
 import type {
 	CommandResponse,
@@ -116,7 +119,9 @@ export function register_tools(server: McpServer<GenericSchema>) {
 		},
 		async ({ filter }) => {
 			try {
-				const cmd = filter ? `env | grep -i "${filter}"` : 'env';
+				const cmd = filter
+					? `env | grep -i -- ${quote_shell_arg(filter)}`
+					: 'env';
 				const result = await command_executor.execute_command(cmd);
 				return {
 					content: [
@@ -145,7 +150,7 @@ export function register_tools(server: McpServer<GenericSchema>) {
 		async ({ filter }) => {
 			try {
 				const cmd = filter
-					? `ps aux | grep -i "${filter}" | grep -v grep`
+					? `ps aux | grep -i -- ${quote_shell_arg(filter)} | grep -v grep`
 					: 'ps aux';
 				const result = await command_executor.execute_command(cmd);
 				return {
@@ -174,7 +179,9 @@ export function register_tools(server: McpServer<GenericSchema>) {
 		},
 		async ({ path }) => {
 			try {
-				const cmd = path ? `df -h "${path}"` : 'df -h';
+				const cmd = path
+					? `df -h -- ${quote_shell_arg(path)}`
+					: 'df -h';
 				const result = await command_executor.execute_command(cmd);
 				return {
 					content: [
@@ -205,8 +212,8 @@ export function register_tools(server: McpServer<GenericSchema>) {
 		},
 		async ({ path, details }) => {
 			try {
-				const dir = path || '.';
-				const cmd = details ? `ls -lah "${dir}"` : `ls -A "${dir}"`;
+				const dir = quote_shell_arg(path || '.');
+				const cmd = details ? `ls -lah -- ${dir}` : `ls -A -- ${dir}`;
 				const result = await command_executor.execute_command(cmd);
 				return {
 					content: [
