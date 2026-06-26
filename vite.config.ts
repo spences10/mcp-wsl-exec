@@ -8,6 +8,9 @@ export default defineConfig({
 		dts: false,
 		outExtensions: () => ({ js: '.js' }),
 	},
+	test: {
+		include: ['src/**/*.test.ts'],
+	},
 	fmt: {
 		useTabs: true,
 		singleQuote: true,
