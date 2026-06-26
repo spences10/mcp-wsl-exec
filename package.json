@@ -72,6 +72,6 @@
 	"engines": {
 		"node": ">=22.0.0"
 	},
-	"packageManager": "pnpm@11.3.0",
+	"packageManager": "pnpm@11.9.0",
 	"mcpName": "io.github.spences10/mcp-wsl-exec"
 }
