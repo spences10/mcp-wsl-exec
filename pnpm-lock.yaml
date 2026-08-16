@@ -12,8 +12,8 @@ importers:
         specifier: ^0.1.6
         version: 0.1.6(tmcp@1.19.4(typescript@6.0.3))(valibot@1.4.1(typescript@6.0.3))
       '@tmcp/transport-stdio':
-        specifier: ^0.4.3
-        version: 0.4.3(tmcp@1.19.4(typescript@6.0.3))
+        specifier: ^0.5.0
+        version: 0.5.0(tmcp@1.19.4(typescript@6.0.3))
       tmcp:
         specifier: ^1.19.4
         version: 1.19.4(typescript@6.0.3)
@@ -562,10 +562,15 @@ packages:
       tmcp: ^1.17.0
       valibot: ^1.1.0
 
-  '@tmcp/transport-stdio@0.4.3':
-    resolution: {integrity: sha512-chdmSwk7PSXjkaQId2OAY8ZMFrTFWwckfCyXJuw6b6WFK9IMK95EoU2VDFioybcmawuQox0MNPM5R2DVxlptoA==}
+  '@tmcp/session-manager@0.3.0':
+    resolution: {integrity: sha512-L16r8qlzXUoS0ec7kuap1P1nQorCcZHHUFe7UGijwwrfBRXB0hFnfC+/BM1PVdGlM7Ade8YxomecybQN5imYXA==}
     peerDependencies:
-      tmcp: ^1.16.3
+      tmcp: ^1.20.0-next.0 || ^1.20.0
+
+  '@tmcp/transport-stdio@0.5.0':
+    resolution: {integrity: sha512-1NZsGDveDraa/KWsOOn8VybPn5PbYJi5hRWuIRUKIX7joa3Lx7tSf+0EeXwzG1OyPlsEeTNagBWpBpvpfh5lpw==}
+    peerDependencies:
+      tmcp: ^1.20.0-next.0 || ^1.20.0
 
   '@tybys/wasm-util@0.10.3':
     resolution: {integrity: sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg==}
@@ -1857,8 +1862,14 @@ snapshots:
       tmcp: 1.19.4(typescript@6.0.3)
       valibot: 1.4.1(typescript@6.0.3)
 
-  '@tmcp/transport-stdio@0.4.3(tmcp@1.19.4(typescript@6.0.3))':
+  '@tmcp/session-manager@0.3.0(tmcp@1.19.4(typescript@6.0.3))':
     dependencies:
+      json-rpc-2.0: 1.7.1
+      tmcp: 1.19.4(typescript@6.0.3)
+
+  '@tmcp/transport-stdio@0.5.0(tmcp@1.19.4(typescript@6.0.3))':
+    dependencies:
+      '@tmcp/session-manager': 0.3.0(tmcp@1.19.4(typescript@6.0.3))
       tmcp: 1.19.4(typescript@6.0.3)
 
   '@tybys/wasm-util@0.10.3':
